@@ -5,38 +5,40 @@ import Slider from 'react-slick';
 import 'react-datepicker/dist/react-datepicker.css';
 import 'slick-carousel/slick/slick.css'; 
 import 'slick-carousel/slick/slick-theme.css';
+import initialData from '../../db/db.json'
+import { useState } from 'react';
 
 type FormValues = {
     Nome: string
     Date: Date
     Profissional: string
     Servicos: string[]
-    selectedTime: string | null;
+    selectedTime: string;
 }
-interface TimeSlot {
+interface Option {
+    id: number;
+    label: string;
+    valor: number;
+  }
+  
+  interface TimeSlot {
     id: number;
     time: string;
   }
-
-const options = [
-    { id: '1', label: "Cabelo"},
-    { id: '2', label: "Barba"},
-    { id: '3', label: "Sombrancelha"},
-]
-
-
-const timeSlots: TimeSlot[] = [
-    { id: 1, time: "08:00 AM" },
-    { id: 2, time: "09:00 AM" },
-    { id: 3, time: "10:00 AM" },
-    { id: 4, time: "11:00 AM" },
-    { id: 5, time: "12:00 PM" },
-    { id: 6, time: "01:00 PM" },
-    { id: 7, time: "02:00 PM" },
-    { id: 8, time: "03:00 PM" }
-];
-
+  
+  interface Barber {
+    horariosOcupados: string[];
+  }
+  
+  interface BarberData {
+    options: Option[];
+    timeSlots: TimeSlot[];
+    barber: {
+      [key: string]: Barber;
+    };
+  }
 function AgendarHorario(){
+    const [db, setDb] = useState<BarberData>(initialData);
 
     const settings = {
         dots: true,
@@ -49,13 +51,21 @@ function AgendarHorario(){
     const { control ,register, handleSubmit, formState: { errors }, setValue } = useForm<FormValues>({
         defaultValues: {
             Servicos: [],
-            selectedTime: null
+            selectedTime: ''
         }
     });
     //const onSubmit = (data: FormValues) => console.log(data);
     const onSubmit: SubmitHandler<FormValues> = (data) => {
-        console.log(data);
-        console.log(errors);
+        console.log("submit")
+        setDb((prevState) => {
+            if(!prevState.barber[data.Profissional].horariosOcupados.includes(data.selectedTime)){
+                const updateData = {...prevState};
+                updateData.barber[data.Profissional].horariosOcupados = [...prevState.barber[data.Profissional].horariosOcupados, data.selectedTime]
+                return updateData
+            }
+            return prevState
+        })
+        console.log(db)
     }
 
     return (
@@ -83,13 +93,13 @@ function AgendarHorario(){
                 />
                 <select {...register("Profissional")}>
                     <option value="Joao">Joao</option>
-                    <option value=" Pedro"> Pedro</option>
-                    <option value=" Marcos"> Marcos</option>
-                    <option value=" Alex"> Alex</option>
+                    <option value="Pedro"> Pedro</option>
+                    <option value="Marcos"> Marcos</option>
+                    <option value="Alex"> Alex</option>
                 </select>   
                     
                 <div>
-                    {options.map((option) => (
+                    {db.options.map((option) => (
                         <Controller 
                             key={option.id}
                             name='Servicos'
@@ -122,11 +132,14 @@ function AgendarHorario(){
                     control={control}
                     render={({field}) => (
                         <Slider {...settings}>
-                            {timeSlots.map((slot) => (
+                            {db.timeSlots.map((slot) => (
                                 <div key={slot.id}>
                                     <button
                                         type='button'
-                                        onClick={() => setValue('selectedTime', slot.time)}
+                                        onClick={() => { 
+                                            console.log("click")
+                                            setValue('selectedTime', slot.time)
+                                        }}
                                     >
                                         {slot.time}
                                     </button>
