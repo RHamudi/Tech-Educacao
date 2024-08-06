@@ -7,6 +7,9 @@ import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
 import initialData from '../../db/db.json'
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Alert } from '@mui/material';
+import { useSnackbar } from 'notistack';
 
 type FormValues = {
     Nome: string
@@ -53,17 +56,22 @@ function AgendarHorario(){
         }
     });
     const [db, setDb] = useState<BarberData>(initialData);
-    const selectedStyle = 'bg-blue-500 text-white'; // estilo para botão selecionado
-    const defaultStyle = 'bg-white text-black';
+    const selectedStyle = 'p-2 rounded font-bold bg-blue-500 text-white'; // estilo para botão selecionado
+    const defaultStyle = 'p-2 rounded font-bold bg-white text-black';
+    const blockStyle = 'cursor-not-allowed bg-gray-600 text-black p-2 rounded';
     const selectedTime = watch('selectedTime');
     const selectedData = format(watch('Date'), 'dd/MM/yyyy')
     const profSelected = watch('Profissional');
+    const { enqueueSnackbar } = useSnackbar();
+    const navigate = useNavigate();
     //console.log("data", selectedData)
     //console.log("selectTime", selectedTime)
     const json = localStorage.getItem(profSelected);
     let dateProf: local[] = [];
     if(json){
         dateProf = JSON.parse(json);
+        console.log(selectedData)
+        console.log(dateProf.some(item => item.Date == selectedData ))
     }
     const settings = {
         dots: true,
@@ -74,13 +82,11 @@ function AgendarHorario(){
       };
 
     const onSubmit: SubmitHandler<FormValues> = (data) => {
+        
         let form = format(data.Date, "dd/MM/yyyy")
-        const upd = db.barber[data.Profissional].horariosOcupados.map((item)=>{
-            return item.time === data.selectedTime ? {...item, disable: true, date: form} : item
-        })
-        //console.log(data);
-        var local = localStorage.getItem(data.Profissional)
 
+        var local = localStorage.getItem(data.Profissional)
+        
         if(local){
             var obj = JSON.parse(local);
             localStorage.setItem(data.Profissional, JSON.stringify([...obj,
@@ -91,21 +97,21 @@ function AgendarHorario(){
                 {Date: form, Horas: data.selectedTime}
             ]))
         }
-        console.log()
+        navigate('/');
+        enqueueSnackbar("Horario Agendado com sucesso", {variant: 'success'})
     }
-    //console.log("db", db)
     return (
         <>
         <section className="flex justify-center items-center bg-blue-950 h-screen">
             <form className='w-96  flex flex-col gap-10 p-10 bg-blue-900 rounded' onSubmit={handleSubmit(onSubmit)}>
                 <div>
-                    <label className='font-bold'>Informe Seu Nome</label>
+                    <label className='font-bold text-white'>Informe Seu Nome</label>
                     <input className='bg-gray-200 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4
                     text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500" id="inline-full-name'
                     type="text" placeholder="Nome" {...register("Nome", {required: true, min: 10})} />
                 </div>
                 <div>
-                    <label className='font-bold'>Escolha uma data</label>
+                    <label className='font-bold text-white'>Escolha uma data</label>
                     <Controller 
                         name='Date'
                         control={control}
@@ -129,7 +135,7 @@ function AgendarHorario(){
                     />
                 </div>
                 <div>
-                    <label className='font-bold'>Escolha Um Profissional</label>
+                    <label className='font-bold text-white'>Escolha Um Profissional</label>
                     <select className='block appearance-none w-full bg-white border border-gray-400 hover:border-gray-500 
                         px-4 py-2 pr-8 rounded shadow leading-tight focus:outline-none focus:shadow-outline'
                     {...register("Profissional")}>
@@ -141,7 +147,7 @@ function AgendarHorario(){
                 </div>
                     
                 <div>
-                    <h2 className='font-bold'>Selecione Um ou Mais serviços</h2>
+                    <h2 className='font-bold text-white'>Selecione Um ou Mais serviços</h2>
                     <ul className='w-48 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white'>
                         {db.options.map((option) => (
                             <Controller 
@@ -178,7 +184,7 @@ function AgendarHorario(){
                 </div>
 
                 <div>
-                <label className='font-bold'>Selecione Um Horario para ser atendido</label>
+                <label className='font-bold text-white'>Selecione Um Horario para ser atendido</label>
                 <Controller 
                     name='selectedTime'
                     control={control}
@@ -187,10 +193,10 @@ function AgendarHorario(){
                             {db.barber[profSelected].horariosOcupados.map((slot, key) => (
                                 <div key={slot.id}>
                                     <button
-                                        disabled={slot.disable}
-                                        className={`p-2 rounded font-bold ${
-                                        selectedTime === slot.time ? selectedStyle : defaultStyle
-                                        } ${dateProf.some(item => item.Date == selectedData && item.Horas == slot.time) ? 'cursor-not-allowed bg-gray-600' : ""}`}
+                                        //{${dateProf.some(item => item.Date == selectedData && item.Horas == slot.time) ? 'cursor-not-allowed bg-gray-600' : ''}}
+                                        className={`${selectedTime === slot.time ? selectedStyle : dateProf.some(item => item.Date == selectedData && item.Horas == slot.time) ? blockStyle : defaultStyle} `}
+                                        disabled={dateProf.some(item => item.Date == selectedData && item.Horas == slot.time)}
+                                        //className={`p-2 rounded font-bold ${selectedTime === slot.time ? selectedStyle : defaultStyle}`}
                                         type='button'
                                         onClick={() => { 
                                             setValue('selectedTime', slot.time)
