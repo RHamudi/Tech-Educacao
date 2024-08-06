@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom"
 
 function Header(){
     return(
@@ -14,9 +15,10 @@ function Header(){
                     </ul>
                 </nav>
             </div>
-            <div className="">
+            <Link to="/agendar">
                 <button className="p-4 rounded text-black bg-yellow-300">Agende um horario</button>
-            </div>
+            </Link>
+
         </header>
     )
 }

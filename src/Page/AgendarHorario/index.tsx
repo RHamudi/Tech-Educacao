@@ -6,7 +6,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 import 'slick-carousel/slick/slick.css'; 
 import 'slick-carousel/slick/slick-theme.css';
 import initialData from '../../db/db.json'
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 type FormValues = {
     Nome: string
@@ -24,15 +24,21 @@ interface Option {
   interface TimeSlot {
     id: number;
     time: string;
+    disable: boolean
+    date: string | null
+  }
+
+  interface local {
+    Date: string
+    Horas: string
   }
   
   interface Barber {
-    horariosOcupados: string[];
+    horariosOcupados: TimeSlot[];
   }
   
   interface BarberData {
     options: Option[];
-    timeSlots: TimeSlot[];
     barber: {
       [key: string]: Barber;
     };
@@ -41,14 +47,24 @@ function AgendarHorario(){
     const {watch, control,register, handleSubmit, formState: { errors }, setValue } = useForm<FormValues>({
         defaultValues: {
             Servicos: [],
-            selectedTime: ''
+            selectedTime: '',
+            Profissional: 'Joao',
+            Date: new Date()
         }
     });
     const [db, setDb] = useState<BarberData>(initialData);
     const selectedStyle = 'bg-blue-500 text-white'; // estilo para botão selecionado
     const defaultStyle = 'bg-white text-black';
     const selectedTime = watch('selectedTime');
-
+    const selectedData = format(watch('Date'), 'dd/MM/yyyy')
+    const profSelected = watch('Profissional');
+    //console.log("data", selectedData)
+    //console.log("selectTime", selectedTime)
+    const json = localStorage.getItem(profSelected);
+    let dateProf: local[] = [];
+    if(json){
+        dateProf = JSON.parse(json);
+    }
     const settings = {
         dots: true,
         infinite: false,
@@ -57,20 +73,27 @@ function AgendarHorario(){
         slidesToScroll: 1
       };
 
-    //const onSubmit = (data: FormValues) => console.log(data);
     const onSubmit: SubmitHandler<FormValues> = (data) => {
-        console.log("submit")
-        setDb((prevState) => {
-            if(!prevState.barber[data.Profissional].horariosOcupados.includes(data.selectedTime)){
-                const updateData = {...prevState};
-                updateData.barber[data.Profissional].horariosOcupados = [...prevState.barber[data.Profissional].horariosOcupados, data.selectedTime]
-                return updateData
-            }
-            return prevState
+        let form = format(data.Date, "dd/MM/yyyy")
+        const upd = db.barber[data.Profissional].horariosOcupados.map((item)=>{
+            return item.time === data.selectedTime ? {...item, disable: true, date: form} : item
         })
-        console.log(db)
-    }
+        //console.log(data);
+        var local = localStorage.getItem(data.Profissional)
 
+        if(local){
+            var obj = JSON.parse(local);
+            localStorage.setItem(data.Profissional, JSON.stringify([...obj,
+                {Date: form, Horas: data.selectedTime}
+            ]))
+        } else {
+            localStorage.setItem(data.Profissional, JSON.stringify([
+                {Date: form, Horas: data.selectedTime}
+            ]))
+        }
+        console.log()
+    }
+    //console.log("db", db)
     return (
         <>
         <section className="flex justify-center items-center bg-blue-950 h-screen">
@@ -161,12 +184,13 @@ function AgendarHorario(){
                     control={control}
                     render={({field}) => (
                         <Slider {...settings}>
-                            {db.timeSlots.map((slot) => (
+                            {db.barber[profSelected].horariosOcupados.map((slot, key) => (
                                 <div key={slot.id}>
                                     <button
+                                        disabled={slot.disable}
                                         className={`p-2 rounded font-bold ${
                                         selectedTime === slot.time ? selectedStyle : defaultStyle
-                                        }`}
+                                        } ${dateProf.some(item => item.Date == selectedData && item.Horas == slot.time) ? 'cursor-not-allowed bg-gray-600' : ""}`}
                                         type='button'
                                         onClick={() => { 
                                             setValue('selectedTime', slot.time)
