@@ -128,7 +128,7 @@ function AgendarHorario(){
                                 onBlur={field.onBlur} // Adicionar onBlur para integração completa
                                 name={field.name} // Passar o nome do campo
                                 ref={field.ref} // Referência para o campo
-                                value=''
+                                value={selectedData}
                             />
                         )}
                         rules={{required: "a data é obrigatoria"}}
