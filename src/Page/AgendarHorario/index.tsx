@@ -6,9 +6,8 @@ import 'react-datepicker/dist/react-datepicker.css';
 import 'slick-carousel/slick/slick.css'; 
 import 'slick-carousel/slick/slick-theme.css';
 import initialData from '../../db/db.json'
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Alert } from '@mui/material';
 import { useSnackbar } from 'notistack';
 
 type FormValues = {
@@ -47,7 +46,7 @@ interface Option {
     };
   }
 function AgendarHorario(){
-    const {watch, control,register, handleSubmit, formState: { errors }, setValue } = useForm<FormValues>({
+    const {watch, control,register, handleSubmit, setValue } = useForm<FormValues>({
         defaultValues: {
             Servicos: [],
             selectedTime: '',
@@ -129,6 +128,7 @@ function AgendarHorario(){
                                 onBlur={field.onBlur} // Adicionar onBlur para integração completa
                                 name={field.name} // Passar o nome do campo
                                 ref={field.ref} // Referência para o campo
+                                value=''
                             />
                         )}
                         rules={{required: "a data é obrigatoria"}}

@@ -3,7 +3,7 @@
     "module": "ESNext",
     "target": "ESNext",
     "jsx": "react-jsx",
-    "strict": true
+    "strict": true,
   },
   "files": [],
   "references": [
