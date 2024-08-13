@@ -46,7 +46,7 @@ interface Option {
     };
   }
 function AgendarHorario(){
-    const {watch, control,register, handleSubmit, setValue } = useForm<FormValues>({
+    const {watch, control,register, handleSubmit, setValue, formState: error } = useForm<FormValues>({
         defaultValues: {
             Servicos: [],
             selectedTime: '',
@@ -63,14 +63,11 @@ function AgendarHorario(){
     const profSelected = watch('Profissional');
     const { enqueueSnackbar } = useSnackbar();
     const navigate = useNavigate();
-    //console.log("data", selectedData)
-    //console.log("selectTime", selectedTime)
+    
     const json = localStorage.getItem(profSelected);
     let dateProf: local[] = [];
     if(json){
         dateProf = JSON.parse(json);
-        console.log(selectedData)
-        console.log(dateProf.some(item => item.Date == selectedData ))
     }
     const settings = {
         dots: true,
@@ -80,8 +77,7 @@ function AgendarHorario(){
         slidesToScroll: 1
       };
 
-    const onSubmit: SubmitHandler<FormValues> = (data) => {
-        
+    const onSubmit: SubmitHandler<FormValues> = (data) => {    
         let form = format(data.Date, "dd/MM/yyyy")
 
         var local = localStorage.getItem(data.Profissional)
@@ -99,15 +95,17 @@ function AgendarHorario(){
         navigate('/');
         enqueueSnackbar("Horario Agendado com sucesso", {variant: 'success'})
     }
+
     return (
         <>
         <section className="flex justify-center items-center bg-blue-950 h-screen">
-            <form className='w-96  flex flex-col gap-10 p-10 bg-blue-900 rounded' onSubmit={handleSubmit(onSubmit)}>
+            <form className='w-96 flex flex-col gap-10 p-10 bg-blue-900 rounded' onSubmit={handleSubmit(onSubmit)}>
                 <div>
                     <label className='font-bold text-white'>Informe Seu Nome</label>
                     <input className='bg-gray-200 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4
                     text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500" id="inline-full-name'
                     type="text" placeholder="Nome" {...register("Nome", {required: true, min: 10})} />
+                    {error.errors.Nome ? <p className='text-red-800 font-bold'>Por favor informe um nome</p> : <></>}
                 </div>
                 <div>
                     <label className='font-bold text-white'>Escolha uma data</label>
@@ -131,14 +129,23 @@ function AgendarHorario(){
                                 value={selectedData}
                             />
                         )}
-                        rules={{required: "a data é obrigatoria"}}
+                        rules={{
+                            required: "a data é obrigatoria",
+                            validate: value => {
+                                const select = value
+                                const current = new Date();
+                                current.setHours(0,0,0,0)
+                                return select > current || "Não é possivel selecionar data no passado"
+                            }
+                        }}
                     />
+                    {error.errors.Date ? <p className='text-red-800 font-bold'>{error.errors.Date.message}</p> : ""}
                 </div>
                 <div>
                     <label className='font-bold text-white'>Escolha Um Profissional</label>
                     <select className='block appearance-none w-full bg-white border border-gray-400 hover:border-gray-500 
                         px-4 py-2 pr-8 rounded shadow leading-tight focus:outline-none focus:shadow-outline'
-                    {...register("Profissional")}>
+                    {...register("Profissional", {required: true})}>
                         <option value="Joao">Joao</option>
                         <option value="Pedro">Pedro</option>
                         <option value="Marcos">Marcos</option>
@@ -146,7 +153,7 @@ function AgendarHorario(){
                     </select>   
                 </div>
                     
-                <div>
+                <div className='flex flex-col items-center justify-center'>
                     <h2 className='font-bold text-white'>Selecione Um ou Mais serviços</h2>
                     <ul className='w-48 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white'>
                         {db.options.map((option) => (
@@ -154,6 +161,7 @@ function AgendarHorario(){
                                 key={option.id}
                                 name='Servicos'
                                 control={control}
+                                rules={{required: true}}
                                 render={({field}) => (
                                     <li className='w-full border-b border-gray-200 rounded-t-lg dark:border-gray-600'>
                                         <div className='flex items-center ps-3'>
@@ -174,7 +182,6 @@ function AgendarHorario(){
                                             <label className='w-full py-3 ms-2 text-sm font-medium text-gray-900 dark:text-gray-300'>
                                                 {option.label}
                                             </label>
-                                           
                                         </div>
                                     </li>
                                 )}
@@ -188,6 +195,7 @@ function AgendarHorario(){
                 <Controller 
                     name='selectedTime'
                     control={control}
+                    rules={{required: true}}
                     render={({field}) => (
                         <Slider {...settings}>
                             {db.barber[profSelected].horariosOcupados.map((slot, key) => (
