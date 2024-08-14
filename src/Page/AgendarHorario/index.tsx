@@ -9,6 +9,8 @@ import initialData from '../../db/db.json'
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
+import qrcode from '../../assets/qrcode.png'
+import Modal from 'react-modal';
 
 type FormValues = {
     Nome: string
@@ -45,8 +47,10 @@ interface Option {
       [key: string]: Barber;
     };
   }
+
+Modal.setAppElement('#root');
 function AgendarHorario(){
-    const {watch, control,register, handleSubmit, setValue, formState: error } = useForm<FormValues>({
+    const {watch, control,register, handleSubmit, setValue, formState: error, getValues } = useForm<FormValues>({
         defaultValues: {
             Servicos: [],
             selectedTime: '',
@@ -54,6 +58,7 @@ function AgendarHorario(){
             Date: new Date()
         }
     });
+    const formValues = getValues();
     const [db, setDb] = useState<BarberData>(initialData);
     const selectedStyle = 'p-2 rounded font-bold bg-blue-500 text-white'; // estilo para botão selecionado
     const defaultStyle = 'p-2 rounded font-bold bg-white text-black';
@@ -78,23 +83,45 @@ function AgendarHorario(){
       };
 
     const onSubmit: SubmitHandler<FormValues> = (data) => {    
-        let form = format(data.Date, "dd/MM/yyyy")
+        console.log('tres')
+        setIsOpen(true);
+    }
 
-        var local = localStorage.getItem(data.Profissional)
+    //Modal Configs
+    const [modalIsOpen, setIsOpen] = useState<boolean>(false);
+    const customStyles = {
+        content: {
+          top: '50%',
+          left: '50%',
+          right: 'auto',
+          bottom: 'auto',
+          marginRight: '-50%',
+          transform: 'translate(-50%, -50%)',
+        },
+      };
+
+      function clickCloseModal(){
+        setIsOpen(false);
+      }
+
+      function saveData() {
+        let form = format(formValues.Date, "dd/MM/yyyy")
+
+        var local = localStorage.getItem(formValues.Profissional)
         
         if(local){
             var obj = JSON.parse(local);
-            localStorage.setItem(data.Profissional, JSON.stringify([...obj,
-                {Date: form, Horas: data.selectedTime}
+            localStorage.setItem(formValues.Profissional, JSON.stringify([...obj,
+                {Date: form, Horas: formValues.selectedTime}
             ]))
         } else {
-            localStorage.setItem(data.Profissional, JSON.stringify([
-                {Date: form, Horas: data.selectedTime}
+            localStorage.setItem(formValues.Profissional, JSON.stringify([
+                {Date: form, Horas: formValues.selectedTime}
             ]))
         }
         navigate('/');
         enqueueSnackbar("Horario Agendado com sucesso", {variant: 'success'})
-    }
+      }
 
     return (
         <>
@@ -218,11 +245,22 @@ function AgendarHorario(){
                     )}
                 />
                 </div>
-                
                 <input className='p-4 rounded text-black bg-yellow-300 font-bold' type="submit" value={"Agendar"} />
-                
             </form>
         </section>
+        <Modal
+            isOpen={modalIsOpen}
+            //onAfterOpen={afterOpenModal}
+            onRequestClose={clickCloseModal}
+            style={customStyles}
+            contentLabel="Example Modal"
+        >
+            <div className='gap-7 flex flex-col justify-center items-center'>
+                <p className='font-bold'>Pra Finalizar seu agendamento realize o pagamento de 5 Reais</p>
+                <img src={qrcode} className='w-80'/>
+                <button className='p-4 rounded text-black bg-yellow-300' onClick={saveData}>Realizei o pagamento</button>
+            </div>
+        </Modal>
         </>
     )
 }
